@@ -1,6 +1,6 @@
-package modelos
+package models
 
-type RespuestaApi struct {
+type Response struct {
 	Hostname        string `json:"hostname"`
 	Method          string `json:"method"`
 	Url             string `json:"url"`

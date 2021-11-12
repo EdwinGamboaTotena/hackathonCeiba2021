@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/EdwinGamboaTotena/hackathonCeiba2021/configuraciones"
+	"github.com/EdwinGamboaTotena/hackathonCeiba2021/config"
 )
 
 func main() {
-	configuraciones.IniciarAplicacion()
+	config.Start()
 }
