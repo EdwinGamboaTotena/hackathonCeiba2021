@@ -12,15 +12,24 @@ func RequestApi(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	parameter := r.FormValue("number")
-	number, err := strconv.Atoi(parameter)
+	_, err := strconv.Atoi(parameter)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{
+			"status": "BadRequest",
+			"error":  "The QueryParam must be an Integer",
+		})
 		return
 	}
 
-	response, err := services.RequestApi(number)
+	service := services.GetInstance()
+	response, err := service.RequestApi(parameter)
 	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
+		json.NewEncoder(w).Encode(map[string]string{
+			"status": "ServiceUnavailable",
+			"error":  "The external api is not available, try again later ",
+		})
 		return
 	}
 

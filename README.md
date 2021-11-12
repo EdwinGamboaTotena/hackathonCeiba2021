@@ -37,9 +37,9 @@ Para el segundo endpoint se implementara una estrategia de cachear las peticione
 
 Basados en al arquitectura inicial:
 
-![Diagrama arquitectura](docs/arquitectura_inicial.png "Diagrama de arquitectura")
+![Diagrama arquitectura](./docs/arquitectura_inicial.png "Diagrama de arquitectura")
 
 Extenderemos la definicion de la implementacion del Servicio:
 
-![Diagrama componentes!](docs/solucion.drawio.svg "Diagrama de Solución")
+![Diagrama componentes!](./docs/solucion.drawio.svg "Diagrama de Solución")
 
