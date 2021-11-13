@@ -14,13 +14,11 @@ import (
 )
 
 const (
-	ERROR           = "error"
 	HTTP            = "http"
 	SvcApiHostname  = "SVC_API_HOSTNAME"
 	SvcApiPort      = "SVC_API_PORT"
-	CircuitOpenTime = 1
 	Requests        = 3
-	FailureRatio    = 0.8
+	FailureRatio    = 0.9
 )
 
 var (
@@ -84,14 +82,8 @@ func (requestService *requestService) RequestApi(number string) (*models.Respons
 		return &response, nil
 	}
 
-	value, found = requestService.cache.Get(ERROR)
-	if found {
-		return nil, fmt.Errorf(value.(string))
-	}
-
 	err := requestService.doRequest(number, &response)
 	if err != nil {
-		requestService.cache.Set(ERROR, err.Error(), CircuitOpenTime*time.Second)
 		return nil, err
 	}
 
