@@ -23,7 +23,7 @@ const (
 	RetryWaitTime   = 200
 	CircuitOpenTime = 1
 	Requests        = 3
-	FailureRatio    = 0.9
+	FailureRatio    = 0.95
 )
 
 var (
@@ -66,9 +66,9 @@ func (requestService *requestService) RequestApi(number string) (*models.Respons
 		return &response, nil
 	}
 
-	_, found = requestService.cache.Get(ERROR)
+	value, found = requestService.cache.Get(ERROR)
 	if found {
-		time.Sleep(RetryWaitTime * time.Millisecond)
+		return nil, fmt.Errorf(value.(string))
 	}
 
 	err := requestService.doRequest(number, &response)
