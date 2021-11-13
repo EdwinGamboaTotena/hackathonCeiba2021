@@ -67,7 +67,10 @@ func initVarEntorn() (string, string) {
 func initCircuit() *gobreaker.CircuitBreaker {
 	var st gobreaker.Settings
 	st.Name = "HTTP GET EXTERNAL API"
-	st.MaxRequests = 1
+	st.ReadyToTrip = func(counts gobreaker.Counts) bool {
+		failureRatio := float64(counts.TotalFailures) / float64(counts.Requests)
+		return counts.Requests >= Requests && failureRatio >= FailureRatio
+	}
 
 	return gobreaker.NewCircuitBreaker(st)
 }
@@ -83,6 +86,7 @@ func (requestService *requestService) RequestApi(number string) (*models.Respons
 
 	value, found = requestService.cache.Get(ERROR)
 	if found {
+		time.Sleep(RetryWaitTime * time.Millisecond)
 		return nil, fmt.Errorf(value.(string))
 	}
 
