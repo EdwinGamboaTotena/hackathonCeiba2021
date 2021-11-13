@@ -18,7 +18,7 @@ const (
 	SvcApiHostname  = "SVC_API_HOSTNAME"
 	SvcApiPort      = "SVC_API_PORT"
 	Requests        = 3
-	FailureRatio    = 0.9
+	FailureRatio    = 0.8
 )
 
 var (
