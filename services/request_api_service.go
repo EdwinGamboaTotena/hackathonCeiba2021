@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/patrickmn/go-cache"
+	"github.com/sony/gobreaker"
 	"log"
 	"os"
 	"sync"
@@ -13,10 +14,13 @@ import (
 )
 
 const (
-	ERROR          = "error"
-	HTTP           = "http"
-	SvcApiHostname = "SVC_API_HOSTNAME"
-	SvcApiPort     = "SVC_API_PORT"
+	ERROR           = "error"
+	HTTP            = "http"
+	SvcApiHostname  = "SVC_API_HOSTNAME"
+	SvcApiPort      = "SVC_API_PORT"
+	CircuitOpenTime = 1
+	Requests        = 3
+	FailureRatio    = 0.6
 )
 
 var (
@@ -25,9 +29,10 @@ var (
 )
 
 type requestService struct {
-	host  string
-	port  string
-	cache *cache.Cache
+	host           string
+	port           string
+	cache          *cache.Cache
+	circuitBreaker *gobreaker.CircuitBreaker
 }
 
 func GetInstance() *requestService {
@@ -36,11 +41,11 @@ func GetInstance() *requestService {
 
 	if service == nil {
 		initHost, initPort := initVarEntorn()
-		initCache := cache.New(cache.DefaultExpiration, cache.DefaultExpiration)
 		service = &requestService{
-			host:  initHost,
-			port:  initPort,
-			cache: initCache,
+			host:           initHost,
+			port:           initPort,
+			cache:          cache.New(cache.DefaultExpiration, cache.DefaultExpiration),
+			circuitBreaker: initCircuit(),
 		}
 	}
 
@@ -59,6 +64,17 @@ func initVarEntorn() (string, string) {
 	return initHost, initPort
 }
 
+func initCircuit() *gobreaker.CircuitBreaker {
+	var st gobreaker.Settings
+	st.Name = "HTTP GET EXTERNAL API"
+	st.ReadyToTrip = func(counts gobreaker.Counts) bool {
+		failureRatio := float64(counts.TotalFailures) / float64(counts.Requests)
+		return counts.Requests >= Requests && failureRatio >= FailureRatio
+	}
+
+	return gobreaker.NewCircuitBreaker(st)
+}
+
 func (requestService *requestService) RequestApi(number string) (*models.Response, error) {
 	response := models.Response{}
 
@@ -75,7 +91,7 @@ func (requestService *requestService) RequestApi(number string) (*models.Respons
 
 	err := requestService.doRequest(number, &response)
 	if err != nil {
-		requestService.cache.Set(ERROR, err.Error(), 2*time.Second)
+		requestService.cache.Set(ERROR, err.Error(), CircuitOpenTime*time.Second)
 		return nil, err
 	}
 
@@ -86,17 +102,25 @@ func (requestService *requestService) RequestApi(number string) (*models.Respons
 func (requestService *requestService) doRequest(number string, response *models.Response) error {
 	client := getClient()
 
-	resp, err := client.R().
-		SetQueryParams(map[string]string{
-			"number": number,
-		}).
-		SetHeader("Accept", "application/json").
-		Get(fmt.Sprintf("%s://%s:%s/", HTTP, requestService.host, requestService.port))
+	body, err := requestService.circuitBreaker.Execute(func() (interface{}, error) {
+		resp, err := client.R().
+			SetQueryParams(map[string]string{
+				"number": number,
+			}).
+			SetHeader("Accept", "application/json").
+			Get(fmt.Sprintf("%s://%s:%s/", HTTP, requestService.host, requestService.port))
+
+		if err != nil {
+			log.Println(err.Error())
+			return nil, err
+		}
+
+		return resp.Body(), nil
+	})
 
 	if err != nil {
-		log.Println(err.Error())
 		return err
 	}
 
-	return json.Unmarshal(resp.Body(), &response)
+	return json.Unmarshal(body.([]byte), &response)
 }
