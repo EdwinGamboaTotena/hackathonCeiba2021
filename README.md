@@ -2,7 +2,7 @@
 
 ## Descripción de la solución
 
-Para solucionar este problema se plantea implementara un micro servicio en Golang, el cual expondra 2 endpoints de tipo
+Para solucionar el problema planteado en la Hackathon se implementará un micro servicio en Golang, el cual expondra 2 endpoints de tipo
 GET
 
 `/healthz` -> Este se utilizara para saber el estado de la aplicacion, retornando el siguiente Json:
@@ -29,7 +29,7 @@ Cache y de CircuitBreaker, este retronara el mismo objeto que retorne el api ext
 ```
 
 Para el segundo endpoint se implementara una estrategia de cachear las peticiones con un tiempo de vida igual a la
-cantidad de ms que vengan en la propiedad `validitySeconds`
+cantidad de segundos que vengan en la propiedad `validitySeconds`
 
 ## Drivers que orientan la toma de decisiones para la solución propuesta
 
