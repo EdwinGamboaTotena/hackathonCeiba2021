@@ -67,10 +67,7 @@ func initVarEntorn() (string, string) {
 func initCircuit() *gobreaker.CircuitBreaker {
 	var st gobreaker.Settings
 	st.Name = "HTTP GET EXTERNAL API"
-	st.ReadyToTrip = func(counts gobreaker.Counts) bool {
-		failureRatio := float64(counts.TotalFailures) / float64(counts.Requests)
-		return counts.Requests >= Requests && failureRatio >= FailureRatio
-	}
+	st.MaxRequests = 1
 
 	return gobreaker.NewCircuitBreaker(st)
 }
