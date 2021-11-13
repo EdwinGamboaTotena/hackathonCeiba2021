@@ -2,8 +2,8 @@
 
 ## Descripción de la solución
 
-Para solucionar el problema planteado en la Hackathon se implementará un micro servicio en Golang, el cual expondra 2
-endpoints de tipo GET
+Para solucionar el problema planteado en la Hackathon se implementará un micro servicio en Golang, el cual expondra 2 endpoints de tipo
+GET
 
 `/healthz` -> Este se utilizara para saber el estado de la aplicacion, retornando el siguiente Json:
 
