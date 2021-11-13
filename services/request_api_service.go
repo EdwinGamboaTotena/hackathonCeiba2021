@@ -15,15 +15,15 @@ import (
 )
 
 const (
-	ERROR           = "error"
-	HTTP            = "http"
-	SvcApiHostname  = "SVC_API_HOSTNAME"
-	SvcApiPort      = "SVC_API_PORT"
-	RetryCount      = 5
-	RetryWaitTime   = 200
-	CircuitOpenTime = 1
-	Requests        = 3
-	FailureRatio    = 0.95
+	ERROR              = "error"
+	HTTP               = "http"
+	SvcApiHostName     = "SVC_API_HOSTNAME"
+	SvcApiPort         = "SVC_API_PORT"
+	RetryCount         = 5
+	RetryWaitTime      = 200
+	CircuitOpenTime    = 1
+	MinRequestsCircuit = 3
+	FailureRatio       = 0.98
 )
 
 var (

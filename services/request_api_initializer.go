@@ -12,7 +12,7 @@ import (
 func initVarEnvironment() (string, string) {
 	initHost := "api-2.hack.local"
 	initPort := "80"
-	if val, ok := os.LookupEnv(SvcApiHostname); ok {
+	if val, ok := os.LookupEnv(SvcApiHostName); ok {
 		initHost = val
 	}
 	if val, ok := os.LookupEnv(SvcApiPort); ok {
@@ -26,7 +26,7 @@ func initCircuit() *gobreaker.CircuitBreaker {
 	st.Name = "HTTP GET EXTERNAL API"
 	st.ReadyToTrip = func(counts gobreaker.Counts) bool {
 		failureRatio := float64(counts.TotalFailures) / float64(counts.Requests)
-		return counts.Requests >= Requests && failureRatio >= FailureRatio
+		return counts.Requests >= MinRequestsCircuit && failureRatio >= FailureRatio
 	}
 
 	return gobreaker.NewCircuitBreaker(st)
