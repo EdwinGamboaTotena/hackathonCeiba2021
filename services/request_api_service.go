@@ -20,7 +20,7 @@ const (
 	SvcApiPort      = "SVC_API_PORT"
 	CircuitOpenTime = 1
 	Requests        = 3
-	FailureRatio    = 0.3
+	FailureRatio    = 0.8
 )
 
 var (

@@ -9,7 +9,8 @@ GET
 
 ``` json
 {
-    "status": "ok"
+    "status": "ok",
+    "version": "1.1.5"
 }
 ```
 
