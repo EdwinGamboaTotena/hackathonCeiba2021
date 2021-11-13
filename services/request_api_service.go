@@ -3,12 +3,13 @@ package services
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/patrickmn/go-cache"
-	"github.com/sony/gobreaker"
 	"log"
-	"os"
 	"sync"
 	"time"
+
+	"github.com/go-resty/resty/v2"
+	"github.com/patrickmn/go-cache"
+	"github.com/sony/gobreaker"
 
 	"github.com/EdwinGamboaTotena/hackathonCeiba2021/models"
 )
@@ -18,6 +19,8 @@ const (
 	HTTP            = "http"
 	SvcApiHostname  = "SVC_API_HOSTNAME"
 	SvcApiPort      = "SVC_API_PORT"
+	RetryCount      = 5
+	RetryWaitTime   = 200
 	CircuitOpenTime = 1
 	Requests        = 3
 	FailureRatio    = 0.9
@@ -31,6 +34,7 @@ var (
 type requestService struct {
 	host           string
 	port           string
+	client         *resty.Client
 	cache          *cache.Cache
 	circuitBreaker *gobreaker.CircuitBreaker
 }
@@ -40,39 +44,17 @@ func GetInstance() *requestService {
 	defer lock.Unlock()
 
 	if service == nil {
-		initHost, initPort := initVarEntorn()
+		initHost, initPort := initVarEnvironment()
 		service = &requestService{
 			host:           initHost,
 			port:           initPort,
+			client:         initClient(),
 			cache:          cache.New(cache.DefaultExpiration, cache.DefaultExpiration),
 			circuitBreaker: initCircuit(),
 		}
 	}
 
 	return service
-}
-
-func initVarEntorn() (string, string) {
-	initHost := "api-2.hack.local"
-	initPort := "80"
-	if val, ok := os.LookupEnv(SvcApiHostname); ok {
-		initHost = val
-	}
-	if val, ok := os.LookupEnv(SvcApiPort); ok {
-		initPort = val
-	}
-	return initHost, initPort
-}
-
-func initCircuit() *gobreaker.CircuitBreaker {
-	var st gobreaker.Settings
-	st.Name = "HTTP GET EXTERNAL API"
-	st.ReadyToTrip = func(counts gobreaker.Counts) bool {
-		failureRatio := float64(counts.TotalFailures) / float64(counts.Requests)
-		return counts.Requests >= Requests && failureRatio >= FailureRatio
-	}
-
-	return gobreaker.NewCircuitBreaker(st)
 }
 
 func (requestService *requestService) RequestApi(number string) (*models.Response, error) {
@@ -84,10 +66,9 @@ func (requestService *requestService) RequestApi(number string) (*models.Respons
 		return &response, nil
 	}
 
-	value, found = requestService.cache.Get(ERROR)
+	_, found = requestService.cache.Get(ERROR)
 	if found {
 		time.Sleep(RetryWaitTime * time.Millisecond)
-		return nil, fmt.Errorf(value.(string))
 	}
 
 	err := requestService.doRequest(number, &response)
@@ -101,10 +82,8 @@ func (requestService *requestService) RequestApi(number string) (*models.Respons
 }
 
 func (requestService *requestService) doRequest(number string, response *models.Response) error {
-	client := getClient()
-
 	body, err := requestService.circuitBreaker.Execute(func() (interface{}, error) {
-		resp, err := client.R().
+		resp, err := requestService.client.R().
 			SetQueryParams(map[string]string{
 				"number": number,
 			}).
